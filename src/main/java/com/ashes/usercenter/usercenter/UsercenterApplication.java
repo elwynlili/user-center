@@ -8,7 +8,6 @@ public class UsercenterApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(UsercenterApplication.class, args);
-
     }
 
 }
