@@ -1,18 +1,15 @@
-# 使用 OpenJDK 8 作为基础镜像
-FROM openjdk:8-jdk-alpine
+# Docker 镜像构建
+# @author <a href="https://github.com/liyupi">程序员鱼皮</a>
+# @from <a href="https://yupi.icu">编程导航知识星球</a>
+FROM maven:3.5-jdk-8-alpine as builder
 
-# 设置工作目录
+# Copy local code to the container image.
 WORKDIR /app
-
-# 复制 pom.xml 和源代码到容器中
 COPY pom.xml .
 COPY src ./src
 
-# 使用 Maven 构建项目
-RUN mvn clean package -DskipTests
+# Build a release artifact.
+RUN mvn package -DskipTests
 
-# 暴露应用端口
-EXPOSE 8080
-
-# 启动应用
-CMD ["java", "-jar", "target/usercenter-0.0.1-SNAPSHOT.jar","spring.profiles.active=prod"]
+# Run the web service on container startup.
+CMD ["java","-jar","/app/target/usercenter-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod"]
