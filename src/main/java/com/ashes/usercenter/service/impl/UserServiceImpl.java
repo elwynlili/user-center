@@ -44,7 +44,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @param userAccount   用户账户
      * @param userPassword  用户密码
      * @param checkPassword 校验密码
-     * @param planetCode    星球编号
+     * @param planetCode    编号
      * @return 新用户 id
      */
     @Override
@@ -66,11 +66,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String validPattern = "[`~!@#$%^&*()+=|{}':;',\\\\[\\\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
         Matcher matcher = Pattern.compile(validPattern).matcher(userAccount);
         if (matcher.find()) {
-            return -1;
+            log.error("用户账号包含特殊字符，用户账号: {}", userAccount);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号包含特殊字符");
         }
         // 密码和校验密码相同
         if (!userPassword.equals(checkPassword)) {
-            return -1;
+            log.error("密码与校验密码不一致，用户账号: {}", userAccount);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码与校验密码不一致");
         }
         // 账户不能重复
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
@@ -80,12 +82,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号重复");
         }
         // 星球编号不能重复
-        queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("planetCode", planetCode);
-        count = userMapper.selectCount(queryWrapper);
-        if (count > 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "编号重复");
-        }
+//        queryWrapper = new QueryWrapper<>();
+//        queryWrapper.eq("planetCode", planetCode);
+//        count = userMapper.selectCount(queryWrapper);
+//        if (count > 0) {
+//            throw new BusinessException(ErrorCode.PARAMS_ERROR, "编号重复");
+//        }
         // 2. 加密
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
         // 3. 插入数据
@@ -100,7 +102,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return user.getId();
     }
 
-    // [加入星球](https://www.code-nav.cn/) 从 0 到 1 项目实战，经验拉满！10+ 原创项目手把手教程、7 日项目提升训练营、60+ 编程经验分享直播、1000+ 项目经验笔记
 
     /**
      * 用户登录
@@ -137,8 +138,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User user = userMapper.selectOne(queryWrapper);
         // 用户不存在
         if (user == null) {
-            log.info("user login failed, userAccount cannot match userPassword");
-            return null;
+            log.error("用户登录失败，账号或密码错误，用户账号: {}", userAccount);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号或密码错误");
         }
         // 3. 用户脱敏
         User safetyUser = getSafetyUser(user);
