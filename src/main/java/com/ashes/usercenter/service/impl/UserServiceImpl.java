@@ -97,7 +97,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setPlanetCode(planetCode);
         boolean saveResult = this.save(user);
         if (!saveResult) {
-            return -1;
+            log.error("用户注册失败，用户账号: {}", userAccount);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败");
         }
         return user.getId();
     }
@@ -115,19 +116,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public User userLogin(String userAccount, String userPassword, HttpServletRequest request) {
         // 1. 校验
         if (StringUtils.isAnyBlank(userAccount, userPassword)) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数不能为空");
         }
         if (userAccount.length() < 4) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户账号过短");
         }
         if (userPassword.length() < 8) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户密码过短");
         }
         // 账户不能包含特殊字符
         String validPattern = "[`~!@#$%^&*()+=|{}':;',\\\\[\\\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
         Matcher matcher = Pattern.compile(validPattern).matcher(userAccount);
         if (matcher.find()) {
-            return null;
+            log.error("用户账号包含特殊字符，用户账号: {}", userAccount);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号包含特殊字符");
         }
         // 2. 加密
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
